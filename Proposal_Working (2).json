@@ -1,0 +1,1106 @@
+{
+  "name": "Proposal Working",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const rawAnswer = $json[\"answer\"];\n\n// Remove problematic control characters\nconst cleanedAnswer = rawAnswer\n  .replace(/\\r?\\n|\\r/g, '') // Remove newlines\n  .replace(/\\\\\"/g, '\"')      // Fix escaped quotes\n  .replace(/\\\\\\\\/g, '\\\\')    // Fix double backslashes\n  .replace(/\\t/g, '');       // Remove tabs\n\n// Now try to parse the cleaned string\nlet parsedAnswer;\ntry {\n  parsedAnswer = JSON.parse(cleanedAnswer);\n} catch (error) {\n  throw new Error('Error parsing JSON: ' + error.message);\n}\n\nreturn parsedAnswer;\n"
+      },
+      "id": "d2f44dae-372b-4f50-bba5-a480f8aa7c3e",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://dif.softinator.org/v1/chat-messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer app-BmBlnL53kJT9p8UCGWbsNwaw"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"inputs\": {\n    \"Client_Requirements\" : \"Want to make website for mobile store\",\n     \"ProjectType\": \"Web Development\",\n     \"TechStack\": \"WordPress, Java\"\n  },\n  \"query\": \"Start writing\",\n  \"response_mode\": \"blocking\",\n  \"conversation_id\": \"\",\n  \"user\": \"abc-123\"  \n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "43ca1879-8a6d-4532-8d51-81a04bec8458",
+      "name": "From Dify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3480,
+        -880
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const rawAnswer = $json[\"answer\"];\n\n// Using updated regex patterns to handle complex markdown and whitespace\nconst sections = {\n  projectProblem: rawAnswer.match(/###\\s*Project Problem\\s*([\\s\\S]*?)(?=###|$)/i)?.[1]?.trim() || '',\n  projectObjective: rawAnswer.match(/###\\s*Project Objective\\s*([\\s\\S]*?)(?=###|$)/i)?.[1]?.trim() || '',\n  projectSolution: rawAnswer.match(/###\\s*Project Solution\\s*([\\s\\S]*?)(?=###|$)/i)?.[1]?.trim() || '',\n  scopeOfProject: rawAnswer.match(/###\\s*Scope of Project\\s*([\\s\\S]*?)(?=###|$)/i)?.[1]?.trim() || '',\n  methodologyOfProject: rawAnswer.match(/##\\s*Methodology of Project\\s*([\\s\\S]*?)(?=##|$)/i)?.[1]?.trim() || ''\n};\n\n// Make sure to escape special characters in markdown when processing text\nconst cleanText = (text) => text\n  .replace(/\\\\n/g, '<br>')            // Convert newlines to HTML line breaks\n  .replace(/\\t/g, '&emsp;')           // Replace tabs with spaces\n  .replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>')  // Bold markdown to HTML\n  .replace(/###\\s*(.*?)/g, '<h3>$1</h3>'); // Convert markdown headers\n\nreturn {\n  projectProblem: cleanText(sections.projectProblem),\n  projectObjective: cleanText(sections.projectObjective),\n  projectSolution: cleanText(sections.projectSolution),\n  scopeOfProject: cleanText(sections.scopeOfProject),\n  methodologyOfProject: cleanText(sections.methodologyOfProject)\n};\n"
+      },
+      "id": "d7aeedf9-0262-4d60-b5c9-831a82beee87",
+      "name": "Code1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1700,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "simple": false,
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "replaceAll",
+              "text": "{projectProblem}",
+              "replaceText": "={{ $('Code8').item.json.answer.ProjectProblem['Project Problem'].ProblemStatement }}\n{{ $('Code8').item.json.answer.ProjectProblem['Project Problem'].KeyChallenges[0].Description }}"
+            }
+          ]
+        }
+      },
+      "id": "9325c443-0853-40cd-ad30-f3e6fcae042c",
+      "name": "Google Docs1",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        -2180,
+        400
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the source document content\nconst sourceContent = $node[\"Source Document Content\"].json.body.content || [];  // The content from the source document\nconst sourceInlineObjects = $node[\"Source Document Content\"].json.inlineObjects || {};  // Extract inline objects if they exist\n\n// Get the target document content\nconst targetContent = $node[\"Target Document Content\"].json.body.content || [];  // The content from the target document\n\n\n\n// Placeholder to replace\nconst placeholder = \"{Aboutus}\";\n\nlet requests = [];  // Array to store the dynamic requests\n\n// Function to find the index of the placeholder in the target document\nfunction findPlaceholderIndex(content, placeholder) {\n  for (const element of content) {\n    if (element.paragraph) {\n      for (const paragraphElement of element.paragraph.elements) {\n        if (paragraphElement.textRun && paragraphElement.textRun.content.includes(placeholder)) {\n          // Found the placeholder\n          return {\n            startIndex: paragraphElement.startIndex,\n            endIndex: paragraphElement.endIndex,\n            textContent: paragraphElement.textRun.content\n          };\n        }\n      }\n    }\n  }\n  return null; // Placeholder not found\n}\n\n// Find the index of the placeholder in the target document\nconst placeholderInfo = findPlaceholderIndex(targetContent, placeholder);\n\nif (!placeholderInfo) {\n  throw new Error(\"Placeholder not found in the target document.\");\n}\n\n// Step 1: Replace the placeholder '{Aboutus}' with an empty string\nrequests.push({\n  \"deleteContentRange\": {\n    \"range\": {\n      \"startIndex\": placeholderInfo.startIndex,\n      \"endIndex\": placeholderInfo.endIndex\n    }\n  }\n});\n\n// Initialize the current index to the startIndex of the placeholder\nlet insertIndex = placeholderInfo.startIndex;\n\n// Step 2: Build the content that will replace {Aboutus} from the source document\nsourceContent.forEach((element) => {\n  if (element.paragraph) {\n    let paragraphText = element.paragraph.elements.map(e => e.textRun ? e.textRun.content : '').join('');\n\n    // Insert text\n    requests.push({\n      \"insertText\": {\n        \"location\": {\n          \"index\": insertIndex\n        },\n        \"text\": paragraphText\n      }\n    });\n\n    // Update insertIndex\n    insertIndex += paragraphText.length;\n\n    // Check for inline images and insert them at the correct position\n    element.paragraph.elements.forEach((paragraphElement) => {\n      if (paragraphElement.inlineObjectElement) {\n        const objectId = paragraphElement.inlineObjectElement.inlineObjectId;\n        if (sourceInlineObjects[objectId] && sourceInlineObjects[objectId].inlineObjectProperties) {\n          const imageUri = sourceInlineObjects[objectId].inlineObjectProperties.embeddedObject.imageProperties.contentUri;\n\n          // Insert the image\n          requests.push({\n            \"insertInlineImage\": {\n              \"location\": {\n                \"index\": insertIndex\n              },\n              \"uri\": imageUri,\n              \"objectSize\": {\n                \"height\": {\n                  \"magnitude\": 200,  // Adjust the size as needed\n                  \"unit\": \"PT\"\n                },\n                \"width\": {\n                  \"magnitude\": 300,  // Adjust the size as needed\n                  \"unit\": \"PT\"\n                }\n              }\n            }\n          });\n\n          // After inserting image, increment insertIndex\n          insertIndex += 1; // Images count as one character\n        }\n      }\n    });\n\n    // Add a newline after each paragraph to ensure proper formatting\n    requests.push({\n      \"insertText\": {\n        \"location\": {\n          \"index\": insertIndex,\n        },\n        \"text\": \"\\n\"\n      }\n    });\n\n    // Increment insertIndex after the newline\n    insertIndex += 1;\n  }\n});\n\n// Output the dynamically generated requests as a valid JSON object\nreturn [{ json: { requests } }];\n"
+      },
+      "id": "3b09cf9c-b62d-4c09-9e78-e0d75deee196",
+      "name": "Code3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        -840
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "options": {}
+      },
+      "id": "b80312b9-e575-43ec-b590-14184187eee6",
+      "name": "Source Document Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1420,
+        -840
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Copy Doc').last().json.id }}\n\n",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "options": {}
+      },
+      "id": "b0edb76c-0c12-47c2-8f31-0feefcc4a54f",
+      "name": "Target Document Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1120,
+        -840
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Copy Doc').last().json.id }}:batchUpdate\n",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "requests",
+              "value": "={{ $json.requests }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0da4bb8d-2003-4594-a29d-d4d42a2ebc73",
+      "name": "targetContent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -640,
+        -840
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nkNjbMND-hU8BR938WrlZlM4fz922ljBvxQJ1bQh-2k",
+          "mode": "list",
+          "cachedResultName": "Test Dify Proposal (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nkNjbMND-hU8BR938WrlZlM4fz922ljBvxQJ1bQh-2k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1420129607",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "dc8e13d9-a6a7-41fc-897a-88d2226832d7",
+      "name": "Aboutus Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2500,
+        -800
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jv3QCcScXzHATaRN",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      aboutUsSelection: 0,\n    }\n  },\n  {\n    json: {\n      aboutUsSelection: 1,\n    }\n  },\n  {\n    json: {\n      aboutUsSelection: 2,\n    }\n  },\n  {\n    json: {\n      aboutUsSelection: 3,\n    }\n  },\n];"
+      },
+      "id": "e9e67b4b-5d2a-4d34-a16e-38832a8cea21",
+      "name": "Code4",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "Node.js About Us",
+        "filter": {},
+        "options": {}
+      },
+      "id": "a4b8da58-3d48-4f0a-912c-18e24722ee9d",
+      "name": "Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1780,
+        -840
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tUPXcNeM8mVddPWd",
+          "name": "Google Drive account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "Native About Us",
+        "filter": {},
+        "options": {}
+      },
+      "id": "b9b454dc-1886-4100-915a-cd945cf3fb5a",
+      "name": "Google Drive2",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1760,
+        -660
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tUPXcNeM8mVddPWd",
+          "name": "Google Drive account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "1n6KyKH1EQVUzRpJeY2bG043_W-45BrzOfOtrE50IEOM",
+          "mode": "list",
+          "cachedResultName": "Proposal template",
+          "cachedResultUrl": "https://docs.google.com/document/d/1n6KyKH1EQVUzRpJeY2bG043_W-45BrzOfOtrE50IEOM/edit?usp=drivesdk"
+        },
+        "name": "Created Proposal",
+        "options": {}
+      },
+      "id": "2a35aa29-068c-44f2-ab89-c5618e80703f",
+      "name": "Copy Doc",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -3080,
+        -780
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tUPXcNeM8mVddPWd",
+          "name": "Google Drive account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the source document content\nconst sourceContent = $node[\"SourceDocumentContent1\"].json.body.content || [];  // The content from the source document\nconst sourceInlineObjects = $node[\"SourceDocumentContent1\"].json.inlineObjects || {};  // Extract inline objects if they exist\n\n// Get the target document content\nconst targetContent1 = $node[\"TargetDocumentContent1\"].json.body.content || [];  // The content from the target document\n\n\n// Placeholder to replace\nconst placeholder = \"{Aboutus}\";\n\nlet requests = [];  // Array to store the dynamic requests\n\n// Function to find the index of the placeholder in the target document\nfunction findPlaceholderIndex(content, placeholder) {\n  for (const element of content) {\n    if (element.paragraph) {\n      for (const paragraphElement of element.paragraph.elements) {\n        if (paragraphElement.textRun && paragraphElement.textRun.content.includes(placeholder)) {\n          // Found the placeholder\n          return {\n            startIndex: paragraphElement.startIndex,\n            endIndex: paragraphElement.endIndex,\n            textContent: paragraphElement.textRun.content\n          };\n        }\n      }\n    }\n  }\n  return null; // Placeholder not found\n}\n\n// Find the index of the placeholder in the target document\nconst placeholderInfo = findPlaceholderIndex(targetContent1, placeholder);\n\nif (!placeholderInfo) {\n  throw new Error(\"Placeholder not found in the target document.\");\n}\n\n// Step 1: Replace the placeholder '{Aboutus}' with an empty string\nrequests.push({\n  \"deleteContentRange\": {\n    \"range\": {\n      \"startIndex\": placeholderInfo.startIndex,\n      \"endIndex\": placeholderInfo.endIndex\n    }\n  }\n});\n\n// Initialize the current index to the startIndex of the placeholder\nlet insertIndex = placeholderInfo.startIndex;\n\n// Step 2: Build the content that will replace {Aboutus} from the source document\nsourceContent.forEach((element) => {\n  if (element.paragraph) {\n    let paragraphText = element.paragraph.elements.map(e => e.textRun ? e.textRun.content : '').join('');\n\n    // Insert text\n    requests.push({\n      \"insertText\": {\n        \"location\": {\n          \"index\": insertIndex\n        },\n        \"text\": paragraphText\n      }\n    });\n\n    // Update insertIndex\n    insertIndex += paragraphText.length;\n\n    // Check for inline images and insert them at the correct position\n    element.paragraph.elements.forEach((paragraphElement) => {\n      if (paragraphElement.inlineObjectElement) {\n        const objectId = paragraphElement.inlineObjectElement.inlineObjectId;\n        if (sourceInlineObjects[objectId] && sourceInlineObjects[objectId].inlineObjectProperties) {\n          const imageUri = sourceInlineObjects[objectId].inlineObjectProperties.embeddedObject.imageProperties.contentUri;\n\n          // Insert the image\n          requests.push({\n            \"insertInlineImage\": {\n              \"location\": {\n                \"index\": insertIndex\n              },\n              \"uri\": imageUri,\n              \"objectSize\": {\n                \"height\": {\n                  \"magnitude\": 200,  // Adjust the size as needed\n                  \"unit\": \"PT\"\n                },\n                \"width\": {\n                  \"magnitude\": 300,  // Adjust the size as needed\n                  \"unit\": \"PT\"\n                }\n              }\n            }\n          });\n\n          // After inserting image, increment insertIndex\n          insertIndex += 1; // Images count as one character\n        }\n      }\n    });\n\n    // Add a newline after each paragraph to ensure proper formatting\n    requests.push({\n      \"insertText\": {\n        \"location\": {\n          \"index\": insertIndex,\n        },\n        \"text\": \"\\n\"\n      }\n    });\n\n    // Increment insertIndex after the newline\n    insertIndex += 1;\n  }\n});\n\n// Output the dynamically generated requests as a valid JSON object\nreturn [{ json: { requests } }];\n"
+      },
+      "id": "4fd4facf-5213-49cb-8f49-61a1f1edcdb5",
+      "name": "Code5",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        -700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Copy Doc').last().json.id }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "requests",
+              "value": "={{ $json.requests }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "01aa61a5-2195-4423-9ba9-25a5f8f859d3",
+      "name": "targetContent1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -620,
+        -680
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $json.id }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=\n{\n  \"requests\": [\n    {\n      \"replaceAllText\": {\n        \"containsText\": {\n          \"text\": \"{projectProblem}\",\n          \"matchCase\": true\n        },\n        \"replaceText\": \"{{ $('Code8').item.json.answer.ProjectProblem.ProjectProblem }}\"\n      }\n    },\n    {\n      \"replaceAllText\": {\n        \"containsText\": {\n          \"text\": \"{projectObjective}\",\n          \"matchCase\": true\n        },\n        \"replaceText\": \"{{ $('Code8').item.json.answer.ProjectObjective.ProjectObjective }}\"\n      }\n    },\n    {\n      \"replaceAllText\": {\n        \"containsText\": {\n          \"text\": \"{projectSolution}\",\n          \"matchCase\": true\n        },\n        \"replaceText\": \"{{ $('Code8').item.json.answer.ProjectSolution.ProjectSolution }}\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "6106474c-c409-4ce7-af03-1a83c5cce92f",
+      "name": "Inserting Var",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2740,
+        -320
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "Inserting Var",
+                    "rightValue": "Inserting Var",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9dc32da4-8276-42b5-b53f-c50af590a09c",
+                    "leftValue": "Target Document Content",
+                    "rightValue": "Target Document Content",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "14c1cd58-86b5-4710-9ae1-e0793a22512a",
+      "name": "Switch1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1240,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "options": {}
+      },
+      "id": "77367103-8af9-403a-817b-ede8af54877d",
+      "name": "SourceDocumentContent1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1400,
+        -700
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Copy Doc').last().json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "options": {}
+      },
+      "id": "e43d57d3-6183-4972-83ab-ea76980205cc",
+      "name": "TargetDocumentContent1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1100,
+        -700
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Assume $input.all() contains all rows from the Google Sheet\nconst allRows = $input.all();\n\n// Check if there are any rows\nif (allRows.length > 0) {\n    // Get the last row\n    const lastRow = allRows[allRows.length - 1].json; // Assuming each row data is stored in the 'json' property\n    return [{ json: lastRow }];\n} else {\n    // Return an empty object if no rows are found\n    console.log('No rows found in the sheet.');\n    return [{ json: {} }];\n}\n"
+      },
+      "id": "61ebd49b-34ca-4d44-bee7-a490969be8db",
+      "name": "Code6",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2280,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {},
+        "options": {}
+      },
+      "id": "0d7d0d23-5404-4240-b38d-331e505ed157",
+      "name": "Google Drive1",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1780,
+        -460
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tUPXcNeM8mVddPWd",
+          "name": "Google Drive account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "Copy of PHP",
+        "filter": {},
+        "options": {}
+      },
+      "id": "b01d6754-742c-4498-aaa4-9dffe267c242",
+      "name": "Google Drive3",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1200,
+        260
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tUPXcNeM8mVddPWd",
+          "name": "Google Drive account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.techStack }}",
+                    "rightValue": "PHP",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8c083a20-3a55-46b0-b3df-f6ca2b1c78db",
+                    "leftValue": "={{ $json.techStack }}",
+                    "rightValue": "Java",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa6ae71b-a9ec-4e88-8d5c-a2e187ace596",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1620,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "Copy of Java",
+        "filter": {},
+        "options": {}
+      },
+      "id": "90fce4e5-4c9e-4dfc-aaf8-b15fae4786c6",
+      "name": "Google Drive4",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1220,
+        440
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tUPXcNeM8mVddPWd",
+          "name": "Google Drive account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://docs.googleapis.com/v1/documents/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "options": {}
+      },
+      "id": "68f37192-fb7b-4563-971f-d52db887521b",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -920,
+        260
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Copy Doc').last().json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "options": {}
+      },
+      "id": "87f52c0b-0f83-4e3d-8482-03a732130340",
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -700,
+        260
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "aRpholxc0PRFpbPA",
+          "name": "Google Docs account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1nkNjbMND-hU8BR938WrlZlM4fz922ljBvxQJ1bQh-2k",
+          "mode": "list",
+          "cachedResultName": "Test Dify Proposal (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nkNjbMND-hU8BR938WrlZlM4fz922ljBvxQJ1bQh-2k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1420129607,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nkNjbMND-hU8BR938WrlZlM4fz922ljBvxQJ1bQh-2k/edit#gid=1420129607"
+        },
+        "options": {}
+      },
+      "id": "54b6b79e-c339-4430-8f9d-d51aa316a4fd",
+      "name": "Google Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3720,
+        -840
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "8RIHoHnbiNY0VZ1o",
+          "name": "Google Sheets Trigger account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Assume $input.all() contains all rows from the Google Sheet\nconst allRows = $input.all();\n\n// Check if there are any rows\nif (allRows.length > 0) {\n    // Get the last row\n    const lastRow = allRows[allRows.length - 1].json; // Assuming each row data is stored in the 'json' property\n    return [{ json: lastRow }];\n} else {\n    // Return an empty object if no rows are found\n    console.log('No rows found in the sheet.');\n    return [{ json: {} }];\n}\n"
+      },
+      "id": "9b3321e5-43f4-4769-8724-50cb4a9281a5",
+      "name": "Code7",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3600,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "{\n  \"requests\": [\n    {\n      \"replaceAllText\": {\n        \"containsText\": {\n          \"text\": \"{projectProblem}\",\n          \"matchCase\": true\n        },\n        \"replaceText\": \"{{ JSON.stringify($('Code8').item.json.answer[0].ProjectProblem) }}\"\n      }\n    },\n    {\n      \"replaceAllText\": {\n        \"containsText\": {\n          \"text\": \"{projectObjective}\",\n          \"matchCase\": true\n        },\n        \"replaceText\": \"{{ JSON.stringify($('Code8').item.json.answer[1].ProjectObjective) }}\"\n      }\n    },\n    {\n      \"replaceAllText\": {\n        \"containsText\": {\n          \"text\": \"{projectSolution}\",\n          \"matchCase\": true\n        },\n        \"replaceText\": \"{{ JSON.stringify($('Code8').item.json.answer[2].ProjectSolution) }}\"\n      }\n    }\n  ]\n}\n"
+      },
+      "id": "2d74efd6-d572-43aa-8dc2-70d74c9d191c",
+      "name": "Code9",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const rawAnswer = $json[\"answer\"];\n\n// Remove problematic control characters\nconst cleanedAnswer = rawAnswer\n  .replace(/\\r?\\n|\\r/g, '') // Remove newlines\n  .replace(/\\\\\"/g, '\"')      // Fix escaped quotes\n  .replace(/\\\\\\\\/g, '\\\\')    // Fix double backslashes\n  .replace(/\\t/g, '')      // Remove tabs\n  .replace(/#{2,}/g, '')        // Remove markdown headers like \"###\"\n  .replace(/\\*{2,}/g, '');  \n\n// Now try to parse the cleaned string\nlet parsedAnswer;\ntry {\n  parsedAnswer = JSON.parse(cleanedAnswer);\n} catch (error) {\n  throw new Error('Error parsing JSON: ' + error.message);\n}\n\nreturn parsedAnswer;\n"
+      },
+      "id": "6425fbd8-3a9e-49cc-86c6-47a126df1022",
+      "name": "Code10",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const rawAnswer = $json[\"answer\"];\n\n// Step 1: Clean problematic control characters from the rawAnswer\nconst cleanedAnswer = rawAnswer\n  .replace(/\"```json/g, '')  // Remove lines with ```json\n  .replace(/```\"/g, '')       // Remove lines with ```\n  .replace(/\\\\n/g, '')             // Remove newline characters ('\\n')\n  .replace(/#/g, '')\n  .replace(/\\\\r/g, '')             // Remove carriage returns ('\\r')\n  .replace(/\\\\\"/g, '\"')            // Fix escaped quotes\n  .replace(/\\\\\\\\/g, '\\\\')          // Fix double backslashes\n  .replace(/\\\\\\//g, '/')           // Fix escaped slashes\n  .replace(/\\\\t/g, '')             // Remove tabs\n  .trim();                       // Trim leading and trailing spaces\n\n// Step 2: Handle possible issues like missing commas or braces\n// Ensure the cleaned string is valid by checking for key-value pairs formatting issues\n\nlet validJSONString = cleanedAnswer;\n\n// Step 3: Try parsing the cleaned JSON\nlet parsedAnswer;\ntry {\n  parsedAnswer = JSON.parse(validJSONString);\n} catch (error) {\n  throw new Error('Error parsing JSON: ' + error.message);\n}\n\n// Step 4: Return or log the parsed JSON object\nreturn parsedAnswer;\n"
+      },
+      "id": "c7054f9d-6cbc-45b9-9372-32ec32350e8e",
+      "name": "Code8",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3300,
+        -280
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.aboutUsSelection }}",
+                    "rightValue": "Node.js About Us",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "d6c68547-e0a7-4634-8d21-a5033ae33281",
+                    "leftValue": "={{ $json.aboutUsSelection }}",
+                    "rightValue": "Android Native About Us",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "0286e2f9-7006-4156-85e3-ea9fc585c383",
+                    "leftValue": "={{ $json.aboutUsSelection }}",
+                    "rightValue": "iOS Dev About Us",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9725e191-c29f-4af3-bb02-27e1e74d5129",
+      "name": "Switch for Aboutus",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.1,
+      "position": [
+        -2100,
+        -800
+      ],
+      "alwaysOutputData": false,
+      "executeOnce": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "From Dify": {
+      "main": [
+        [
+          {
+            "node": "Code8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Source Document Content": {
+      "main": [
+        [
+          {
+            "node": "Target Document Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Target Document Content": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "targetContent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Source Document Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy Doc": {
+      "main": [
+        [
+          {
+            "node": "Inserting Var",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive2": {
+      "main": [
+        [
+          {
+            "node": "SourceDocumentContent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code5": {
+      "main": [
+        [
+          {
+            "node": "targetContent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SourceDocumentContent1": {
+      "main": [
+        [
+          {
+            "node": "TargetDocumentContent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TargetDocumentContent1": {
+      "main": [
+        [
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code6": {
+      "main": [
+        [
+          {
+            "node": "Switch for Aboutus",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aboutus Sheets": {
+      "main": [
+        [
+          {
+            "node": "Code6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Google Drive3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code7": {
+      "main": [
+        [
+          {
+            "node": "From Dify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inserting Var": {
+      "main": [
+        [
+          {
+            "node": "Aboutus Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code8": {
+      "main": [
+        [
+          {
+            "node": "Copy Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch for Aboutus": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0721fe12-4b5a-43f3-b4d1-b6712a07c6ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0a67cc3689914348e2a0bcd121ccbb38786a1c33b9ac5909a958b289976f885d"
+  },
+  "id": "IOfA4gqGKvDI4u8b",
+  "tags": []
+}
