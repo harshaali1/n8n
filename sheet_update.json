@@ -1,0 +1,298 @@
+{
+  "name": "sheet update",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "025df92a-e1ee-48d8-b3fe-5f792a4aa448",
+      "name": "When clicking ‘Test workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### update a sheet any text loop\n"
+      },
+      "id": "dd25db14-204b-4ab3-a7d8-ab750002827e",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UxNHj6KPcmgT_Kx2-2BrbJfFBKojYmnRfnAwCeU6dok",
+          "mode": "list",
+          "cachedResultName": "testsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UxNHj6KPcmgT_Kx2-2BrbJfFBKojYmnRfnAwCeU6dok/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UxNHj6KPcmgT_Kx2-2BrbJfFBKojYmnRfnAwCeU6dok/edit#gid=0"
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "id": "6a2ba448-9948-48e5-b878-94b478fa9bcf",
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        180,
+        460
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XF8TJlEKSyMAjjey",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1UxNHj6KPcmgT_Kx2-2BrbJfFBKojYmnRfnAwCeU6dok",
+          "mode": "list",
+          "cachedResultName": "testsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UxNHj6KPcmgT_Kx2-2BrbJfFBKojYmnRfnAwCeU6dok/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UxNHj6KPcmgT_Kx2-2BrbJfFBKojYmnRfnAwCeU6dok/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "responses": "={{ $json.message.content }}"
+          },
+          "matchingColumns": [
+            "responses"
+          ],
+          "schema": [
+            {
+              "id": "Sno.",
+              "displayName": "Sno.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ClientName",
+              "displayName": "ClientName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "responses",
+              "displayName": "responses",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b7394f94-b31c-4c3a-86dc-b4ad41245acf",
+      "name": "Google Sheets1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        1200,
+        500
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XF8TJlEKSyMAjjey",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 6,
+        "options": {}
+      },
+      "id": "39aaefba-871d-45a5-a012-c284c8a09882",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        940,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {},
+        "options": {}
+      },
+      "id": "0cb02e47-0165-42b9-b144-f08f2e32abc1",
+      "name": "Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        60,
+        720
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ue9si8Hax1XUlVSJ",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-2024-08-06",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-2024-08-06"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "you are a responsible assistant you will read the each columns and write your ressponse in response column that is \"hello <name>\"\\nfor example:\\nif name is abby , your output must ne \"hello abby\".\\nthis you havve to do for all the rows.\\n",
+              "role": "assistant"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7e2d72ac-fc29-414f-9dfc-e5fd1ea1f116",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.4,
+      "position": [
+        560,
+        460
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "qVRC9AY1UHH0UzIg",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst proposals = items[0].json.ProposalVariablesToWorkOn;\n\nreturn proposals.map(proposal => {\n    return {\n        json: proposal\n    };\n});"
+      },
+      "id": "10739526-f74c-4acd-8b42-bb4766630fb1",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        460
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c8bd6f8f-4556-4aa5-8c47-bb7982f470e2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0a67cc3689914348e2a0bcd121ccbb38786a1c33b9ac5909a958b289976f885d"
+  },
+  "id": "nKi32wEn9twHbgCB",
+  "tags": []
+}

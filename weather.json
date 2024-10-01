@@ -1,0 +1,138 @@
+{
+  "name": "weather",
+  "nodes": [
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=Here is the answer Anupa Mam:  {{ $json.message.content }}",
+        "options": {}
+      },
+      "id": "f7e603fe-c119-4bd5-b3b0-e38c7ad1a205",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1240,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "wetherapi",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f07305e4-0e62-4bb8-820b-56d536d15574",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        480,
+        360
+      ],
+      "webhookId": "aaf5f76a-455d-4573-804a-e80b4677828a"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a helpful assistant\n",
+              "role": "system"
+            },
+            {
+              "content": "={{ $json.query.anupamam }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2af81121-26d7-47ca-958e-e2d33b711d05",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.4,
+      "position": [
+        800,
+        360
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "qVRC9AY1UHH0UzIg",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "271d5a8e-a437-4fcd-a33a-405cee34b3d0",
+      "name": "Wikipedia",
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        800,
+        580
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2cb2c4d3-b98c-4f1f-b2eb-51769cd39352",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0a67cc3689914348e2a0bcd121ccbb38786a1c33b9ac5909a958b289976f885d"
+  },
+  "id": "kBxyfocqg3iz8tAE",
+  "tags": []
+}
